@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Budget Lines — RBL IT Budget Portal{% endblock %}
+{% block page_title %}Budget Lines{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Budget Lines</h2>
+    <p>
+      {% if user.role == 'it_head' %}Your submitted budget entries for FY 2026–27
+      {% else %}All IT Head budget entries{% endif %}
+    </p>
+  </div>
+  {% if user.role == 'it_head' %}
+  <a href="/budget/new" class="btn btn-primary">＋ Add New Entry</a>
+  {% endif %}
+</div>
+
+<!-- STATUS COUNTS -->
+<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+  <div class="card" style="padding:14px 20px;flex:1;min-width:120px;text-align:center;">
+    <div style="font-size:22px;font-weight:800;font-family:'IBM Plex Mono',monospace;">{{ counts.draft }}</div>
+    <div class="kpi-sub">Draft</div>
+  </div>
+  <div class="card" style="padding:14px 20px;flex:1;min-width:120px;text-align:center;border-color:rgba(74,158,255,0.2);">
+    <div style="font-size:22px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--info);">{{ counts.submitted }}</div>
+    <div class="kpi-sub">Submitted</div>
+  </div>
+  <div class="card" style="padding:14px 20px;flex:1;min-width:120px;text-align:center;border-color:rgba(0,200,150,0.2);">
+    <div style="font-size:22px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--success);">{{ counts.approved }}</div>
+    <div class="kpi-sub">Approved</div>
+  </div>
+</div>
+
+{% if lines %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Budget Key</th>
+        <th>Business Name</th>
+        {% if user.role != 'it_head' %}<th>IT Head</th>{% endif %}
+        <th>Description</th>
+        <th>Type</th>
+        <th>Application</th>
+        <th>Budget FY25-26 (A)</th>
+        <th>Projected (B)</th>
+        <th>A − B</th>
+        <th>Budget FY26-27 (C)</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in lines %}
+      <tr>
+        <td class="mono">{{ line.budget_key_current }}</td>
+        <td>{{ line.business_name }}</td>
+        {% if user.role != 'it_head' %}
+        <td>{{ line.submitted_by_user.full_name if line.submitted_by_user else '—' }}</td>
+        {% endif %}
+        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          {{ line.description }}
+        </td>
+        <td>
+          <span class="badge badge-{{ line.expense_sub_type.value }}">
+            {{ line.expense_sub_type.value.upper() }}
+          </span>
+        </td>
+        <td>{{ line.application_platform or '—' }}</td>
+        <td class="mono">₹{{ "{:,.0f}".format(line.budget_amt_current_fy) }}</td>
+        <td class="mono">₹{{ "{:,.0f}".format(line.projected_consumption) }}</td>
+        <td class="mono {% if line.diff_a_minus_b and line.diff_a_minus_b >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {% if line.diff_a_minus_b is not none %}
+            {{ '+' if line.diff_a_minus_b >= 0 else '−' }} ₹{{ "{:,.0f}".format(line.diff_a_minus_b | abs) }}
+          {% else %}—{% endif %}
+        </td>
+        <td class="mono">₹{{ "{:,.0f}".format(line.budget_amt_next_fy) }}</td>
+        <td>
+          {% set s = line.status.value %}
+          {% if s == 'draft' %}<span class="badge badge-draft">Draft</span>
+          {% elif s == 'submitted' %}<span class="badge badge-submitted">Submitted</span>
+          {% elif s == 'admin_approved' %}<span class="badge badge-admin-app">CA Approved</span>
+          {% elif s == 'final_approved' %}<span class="badge badge-approved">Approved ✓</span>
+          {% elif s == 'rejected_by_admin' %}<span class="badge badge-rejected">Rejected (CA)</span>
+          {% else %}<span class="badge badge-rejected">Rejected (CEO)</span>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            {% if user.role == 'it_head' and line.status.value == 'draft' %}
+            <form method="POST" action="/budget/{{ line.id }}/submit" style="display:inline;">
+              <button type="submit" class="btn btn-success btn-sm">Submit</button>
+            </form>
+            <form method="POST" action="/budget/{{ line.id }}/delete" style="display:inline;"
+              onsubmit="return confirm('Delete this entry?')">
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <div class="empty-title">No budget entries found</div>
+    <div class="empty-sub">
+      {% if user.role == 'it_head' %}
+      <a href="/budget/new" class="btn btn-primary btn-sm" style="margin-top:14px;">
+        ＋ Add Your First Budget Entry
+      </a>
+      {% else %}
+        IT Heads haven't submitted any entries yet.
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

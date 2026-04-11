@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — RBL IT Budget Portal{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Budget Overview</h2>
+    <p>FY 2025–26 actuals → FY 2026–27 planning cycle</p>
+  </div>
+  <div class="flex gap-8">
+    <span class="fy-badge">Budget Cycle: Open</span>
+  </div>
+</div>
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi-card" style="--kpi-color: var(--rbl-red);">
+    <div class="kpi-label">Total Budget</div>
+    <div class="kpi-value">₹{{ "{:,.0f}".format(kpi.total_budget / 100000) }}L</div>
+    <div class="kpi-sub">All lines · FY 25-26</div>
+  </div>
+  <div class="kpi-card" style="--kpi-color: var(--info);">
+    <div class="kpi-label">OPEX</div>
+    <div class="kpi-value">₹{{ "{:,.0f}".format(kpi.total_opex / 100000) }}L</div>
+    <div class="kpi-sub">Recurring expenses</div>
+  </div>
+  <div class="kpi-card" style="--kpi-color: var(--warning);">
+    <div class="kpi-label">CAPEX</div>
+    <div class="kpi-value">₹{{ "{:,.0f}".format(kpi.total_capex / 100000) }}L</div>
+    <div class="kpi-sub">One-time investments</div>
+  </div>
+  <div class="kpi-card" style="--kpi-color: var(--success);">
+    <div class="kpi-label">Budget Keys</div>
+    <div class="kpi-value">{{ kpi.budget_keys }}</div>
+    <div class="kpi-sub">Unique active keys</div>
+  </div>
+  <div class="kpi-card" style="--kpi-color: #AA88FF;">
+    <div class="kpi-label">IT Heads</div>
+    <div class="kpi-value">{{ kpi.it_heads }}</div>
+    <div class="kpi-sub">Submitted entries</div>
+  </div>
+</div>
+
+<!-- CHARTS ROW 1 -->
+<div class="charts-grid-2">
+  <div class="card">
+    <div class="card-title">Budget by IT Head (₹ Lakhs)</div>
+    <canvas id="barChart" height="200"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title">OPEX vs CAPEX Split</div>
+    <canvas id="pieChart" height="200"></canvas>
+  </div>
+</div>
+
+<!-- CHARTS ROW 2 -->
+<div class="charts-grid-1">
+  <div class="card">
+    <div class="card-title">Budget vs Projected Consumption — FY 25-26 (₹ Lakhs)</div>
+    <canvas id="lineChart" height="100"></canvas>
+  </div>
+</div>
+
+<!-- RECENT ENTRIES TABLE -->
+<div class="card mt-24">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div class="card-title" style="margin:0;">Recent Budget Entries</div>
+    <a href="/budget/" class="btn btn-outline btn-sm">View All →</a>
+  </div>
+  {% if recent_lines %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Budget Key</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Budget FY25-26</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in recent_lines %}
+        <tr>
+          <td class="mono">{{ line.budget_key_current }}</td>
+          <td>{{ line.description }}</td>
+          <td>
+            <span class="badge badge-{{ line.expense_sub_type.value }}">
+              {{ line.expense_sub_type.value.upper() }}
+            </span>
+          </td>
+          <td class="mono">₹{{ "{:,.0f}".format(line.budget_amt_current_fy) }}</td>
+          <td>
+            {% set s = line.status.value %}
+            {% if s == 'draft' %}<span class="badge badge-draft">Draft</span>
+            {% elif s == 'submitted' %}<span class="badge badge-submitted">Submitted</span>
+            {% elif s == 'admin_approved' %}<span class="badge badge-admin-app">Admin Approved</span>
+            {% elif s == 'final_approved' %}<span class="badge badge-approved">Approved</span>
+            {% else %}<span class="badge badge-rejected">Rejected</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <div class="empty-title">No budget entries yet</div>
+    <div class="empty-sub">
+      {% if user.role == 'it_head' %}
+        <a href="/budget/new" class="btn btn-primary btn-sm" style="margin-top:12px;">+ Add First Entry</a>
+      {% else %}IT Heads haven't submitted any entries yet.{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
+const grid    = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+const txtClr  = isDark ? '#8888A0' : '#5A5A78';
+const labels  = {{ it_head_data.keys() | list | tojson }};
+const budgets = {{ it_head_data.values() | map(attribute='budget') | list | tojson }};
+const proj    = {{ it_head_data.values() | map(attribute='projected') | list | tojson }};
+const opex    = {{ kpi.total_opex }};
+const capex   = {{ kpi.total_capex }};
+
+// Bar Chart
+new Chart(document.getElementById('barChart'), {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [
+      { label: 'Budget FY25-26', data: budgets.map(v => v/100000),
+        backgroundColor: 'rgba(200,16,46,0.75)', borderRadius: 5 },
+      { label: 'Projected', data: proj.map(v => v/100000),
+        backgroundColor: 'rgba(74,158,255,0.55)', borderRadius: 5 }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: txtClr, font: { size: 11 } } } },
+    scales: {
+      x: { ticks: { color: txtClr, font:{size:11} }, grid: { color: grid } },
+      y: { ticks: { color: txtClr, font:{size:11} }, grid: { color: grid },
+           title: { display: true, text: '₹ Lakhs', color: txtClr } }
+    }
+  }
+});
+
+// Pie Chart
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['OPEX', 'CAPEX'],
+    datasets: [{ data: [opex, capex],
+      backgroundColor: ['rgba(74,158,255,0.8)', 'rgba(255,184,48,0.8)'],
+      borderColor: isDark ? '#13131A' : '#FFFFFF', borderWidth: 3 }]
+  },
+  options: {
+    cutout: '62%',
+    plugins: { legend: { labels: { color: txtClr, padding: 16, font: { size: 12 } } } }
+  }
+});
+
+// Line Chart (static monthly data for prototype)
+new Chart(document.getElementById('lineChart'), {
+  type: 'line',
+  data: {
+    labels: ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+    datasets: [
+      { label: 'Budget FY25-26', data: [38,40,42,39,44,41,43,47,45,48,46,50],
+        borderColor: 'rgba(200,16,46,0.9)', backgroundColor: 'rgba(200,16,46,0.08)',
+        fill: true, tension: 0.4, borderWidth: 2 },
+      { label: 'Projected Consumption', data: [35,37,40,36,42,38,41,44,43,46,44,48],
+        borderColor: 'rgba(74,158,255,0.9)', backgroundColor: 'rgba(74,158,255,0.05)',
+        fill: true, tension: 0.4, borderWidth: 2, borderDash: [5,3] }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: txtClr, font: { size: 11 } } } },
+    scales: {
+      x: { ticks: { color: txtClr }, grid: { color: grid } },
+      y: { ticks: { color: txtClr }, grid: { color: grid },
+           title: { display: true, text: '₹ Lakhs', color: txtClr } }
+    }
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Add Budget Entry — RBL IT Budget Portal{% endblock %}
+{% block page_title %}Add Budget Entry{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>New Budget Entry</h2>
+    <p>Fill all steps carefully — submitted entries cannot be edited</p>
+  </div>
+  <a href="/budget/" class="btn btn-ghost">← Back to List</a>
+</div>
+
+{% if error %}
+<div class="flash flash-error">⚠️ {{ error }} <button onclick="this.parentElement.remove()">✕</button></div>
+{% endif %}
+
+<!-- STEPPER -->
+<div class="stepper">
+  <div class="step active" id="step-1"><div class="step-circle">1</div><div class="step-label">Basic Info</div></div>
+  <div class="step" id="step-2"><div class="step-circle">2</div><div class="step-label">Expense</div></div>
+  <div class="step" id="step-3"><div class="step-circle">3</div><div class="step-label">Numbers</div></div>
+  <div class="step" id="step-4"><div class="step-circle">4</div><div class="step-label">Reasoning</div></div>
+  <div class="step" id="step-5"><div class="step-circle">5</div><div class="step-label">Review</div></div>
+</div>
+
+<form method="POST" action="/budget/new" id="budgetForm">
+
+  <!-- ── STEP 1: Basic Info ── -->
+  <div class="form-step-card" id="form-step-1">
+    <div class="step-card-title">Basic Information</div>
+    <div class="step-card-sub">Identity and ownership — most fields auto-filled from your profile</div>
+    <div class="form-grid-2">
+      <div class="field-group">
+        <label class="field-label">Budget Key (Auto-generated)</label>
+        <div class="field-readonly">{{ next_key }}</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label field-required">Old or New Entry?</label>
+        <select class="field-select" name="old_new" id="oldNew" onchange="togglePrevKey()" required>
+          <option value="">-- Select --</option>
+          <option value="new" {% if entry and entry.old_new.value=='new' %}selected{% endif %}>New Entry</option>
+          <option value="old" {% if entry and entry.old_new.value=='old' %}selected{% endif %}>Old (Continuing)</option>
+        </select>
+        <div class="field-hint">New = first time requesting this budget. Old = same as last year.</div>
+      </div>
+
+      <div class="field-group hidden" id="prevKeyField">
+        <label class="field-label field-required">Previous Year Budget Key (FY 24-25)</label>
+        <input class="field-input" type="text" name="budget_key_previous" id="prevKeyInput"
+          placeholder="e.g. RBL/IT/25/001"
+          value="{{ entry.budget_key_previous if entry else '' }}"/>
+        <div class="field-hint">Copy the budget key from last year's Excel sheet</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label field-required">Business Unit</label>
+        <select class="field-select" name="business_name" id="businessSelect" onchange="autoFillCostCode()" required>
+          <option value="">-- Select Business Unit --</option>
+          <option value="retail"    {% if entry and entry.business_name=='retail'    %}selected{% endif %}>Retail Banking</option>
+          <option value="corporate" {% if entry and entry.business_name=='corporate' %}selected{% endif %}>Corporate Banking</option>
+          <option value="digital"   {% if entry and entry.business_name=='digital'   %}selected{% endif %}>Digital Banking</option>
+          <option value="risk"      {% if entry and entry.business_name=='risk'      %}selected{% endif %}>Risk Management</option>
+          <option value="ops"       {% if entry and entry.business_name=='ops'       %}selected{% endif %}>Operations</option>
+          <option value="treasury"  {% if entry and entry.business_name=='treasury'  %}selected{% endif %}>Treasury</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Cost Code (Auto-filled)</label>
+        <div class="field-readonly" id="costCodeDisplay">Select a Business Unit first</div>
+        <input type="hidden" name="cost_code" id="costCodeHidden"/>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">IT Head (You)</label>
+        <div class="field-readonly" id="itHeadDisplay">{{ user.full_name }}</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">SPOC Contact</label>
+        <div class="field-readonly">{{ user.spoc_email or 'Not set in profile' }}</div>
+      </div>
+    </div>
+    <div class="step-nav">
+      <span></span>
+      <button type="button" class="btn btn-primary" onclick="goStep(2)">Next: Expense Details →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Expense Classification ── -->
+  <div class="form-step-card hidden" id="form-step-2">
+    <div class="step-card-title">Expense Classification</div>
+    <div class="step-card-sub">What are you spending on and how is it categorised?</div>
+    <div class="form-grid-2">
+      <div class="field-group">
+        <label class="field-label field-required">Expense Sub Type</label>
+        <select class="field-select" name="expense_sub_type" id="expenseSubType" required>
+          <option value="">-- OPEX or CAPEX --</option>
+          <option value="opex"  {% if entry and entry.expense_sub_type.value=='opex'  %}selected{% endif %}>
+            OPEX — Recurring (licenses, subscriptions, maintenance)
+          </option>
+          <option value="capex" {% if entry and entry.expense_sub_type.value=='capex' %}selected{% endif %}>
+            CAPEX — One-time (hardware, new software purchase)
+          </option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label field-required">Application / Platform</label>
+        <input class="field-input" type="text" name="application_platform" id="applicationPlatform"
+          placeholder="e.g. Oracle 19c, AWS, SAP S/4HANA, Finacle"
+          value="{{ entry.application_platform if entry else '' }}" required/>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Vendor Name</label>
+        <input class="field-input" type="text" name="vendor_name" id="vendorName"
+          placeholder="e.g. Oracle India Pvt Ltd, Amazon AWS"
+          value="{{ entry.vendor_name if entry else '' }}"/>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Resource Count</label>
+        <input class="field-input" type="number" name="resource_count"
+          placeholder="No. of licenses / users / units" min="0"
+          value="{{ entry.resource_count if entry else '' }}"/>
+        <div class="field-hint">How many licenses, users, or units does this budget cover?</div>
+      </div>
+
+      <div class="field-group col-span-2">
+        <label class="field-label field-required">Short Description</label>
+        <input class="field-input" type="text" name="description" id="shortDescription"
+          placeholder="One-line summary (e.g. Oracle DB License Annual Renewal)" maxlength="200"
+          value="{{ entry.description if entry else '' }}" required/>
+      </div>
+
+      <div class="field-group col-span-2">
+        <label class="field-label">Detailed Expense Description</label>
+        <textarea class="field-textarea" name="expense_description"
+          placeholder="What exactly does this expense cover? Scope, deliverables, SLA, coverage period...">{{ entry.expense_description if entry else '' }}</textarea>
+      </div>
+    </div>
+    <div class="step-nav">
+      <button type="button" class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+      <button type="button" class="btn btn-primary" onclick="goStep(3)">Next: Budget Numbers →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Budget Numbers ── -->
+  <div class="form-step-card hidden" id="form-step-3">
+    <div class="step-card-title">Budget Numbers</div>
+    <div class="step-card-sub">Enter the amounts — differences calculate automatically as you type</div>
+    <div class="form-grid-3">
+      <div class="field-group">
+        <label class="field-label field-required">Final Budget FY 25-26 (A) ₹</label>
+        <input class="field-input" type="number" name="budget_amt_current_fy" id="budgetA"
+          placeholder="e.g. 2400000" min="0" step="1" oninput="calcDiffs()"
+          value="{{ entry.budget_amt_current_fy if entry else '' }}" required/>
+        <div class="field-hint">Approved budget for current financial year</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label field-required">Projected Consumption FY 25-26 (B) ₹</label>
+        <input class="field-input" type="number" name="projected_consumption" id="budgetB"
+          placeholder="e.g. 2250000" min="0" step="1" oninput="calcDiffs()"
+          value="{{ entry.projected_consumption if entry else '' }}" required/>
+        <div class="field-hint">Estimated actual spend by end of this year</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">A − B (Savings / Overrun)</label>
+        <div class="calc-box" id="calcAB" style="color:var(--text-muted);">—</div>
+        <div class="field-hint">Positive = savings · Negative = budget overrun</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label field-required">Budget Requested FY 26-27 (C) ₹</label>
+        <input class="field-input" type="number" name="budget_amt_next_fy" id="budgetC"
+          placeholder="e.g. 2600000" min="0" step="1" oninput="calcDiffs()"
+          value="{{ entry.budget_amt_next_fy if entry else '' }}" required/>
+        <div class="field-hint">How much budget you need next year</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">C − B (Growth vs Actual)</label>
+        <div class="calc-box" id="calcCB" style="color:var(--text-muted);">—</div>
+        <div class="field-hint">Next year ask vs this year actual consumption</div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">C − A (YoY Budget Change)</label>
+        <div class="calc-box" id="calcCA" style="color:var(--text-muted);">—</div>
+        <div class="field-hint">Next year ask vs this year approved budget</div>
+      </div>
+    </div>
+    <div class="step-nav">
+      <button type="button" class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+      <button type="button" class="btn btn-primary" onclick="goStep(4)">Next: Reasoning →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: Reasoning ── -->
+  <div class="form-step-card hidden" id="form-step-4">
+    <div class="step-card-title">Detailed Reasoning</div>
+    <div class="step-card-sub">Justify your budget request — the CA and CEO will review this carefully</div>
+    <div class="field-group">
+      <label class="field-label field-required">Why is this budget needed?</label>
+      <textarea class="field-textarea" name="detailed_reasoning" id="detailedReasoning"
+        style="min-height:160px;"
+        placeholder="Answer these: &#10;• Why this amount? What changed from last year?&#10;• What business value does it deliver?&#10;• What happens if this budget is NOT approved?&#10;• Any alternatives considered?">{{ entry.detailed_reasoning if entry else '' }}</textarea>
+    </div>
+    <div class="step-nav">
+      <button type="button" class="btn btn-ghost" onclick="goStep(3)">← Back</button>
+      <button type="button" class="btn btn-primary" onclick="goStep(5)">Review & Submit →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 5: Review ── -->
+  <div class="form-step-card hidden" id="form-step-5">
+    <div class="step-card-title">Review & Submit</div>
+    <div class="step-card-sub">Verify all details — once submitted you cannot edit this entry</div>
+
+    <div class="review-block">
+      <div class="review-block-title">Identity & Ownership</div>
+      <div class="review-grid">
+        <div><div class="review-key">Budget Key</div><div class="review-val mono">{{ next_key }}</div></div>
+        <div><div class="review-key">Old / New</div><div class="review-val" id="rev-oldnew">—</div></div>
+        <div><div class="review-key">Business Unit</div><div class="review-val" id="rev-business">—</div></div>
+        <div><div class="review-key">Cost Code</div><div class="review-val mono" id="rev-costcode">—</div></div>
+        <div><div class="review-key">IT Head</div><div class="review-val">{{ user.full_name }}</div></div>
+      </div>
+    </div>
+
+    <div class="review-block">
+      <div class="review-block-title">Expense Classification</div>
+      <div class="review-grid">
+        <div><div class="review-key">Sub Type</div><div class="review-val" id="rev-type">—</div></div>
+        <div><div class="review-key">Application</div><div class="review-val" id="rev-app">—</div></div>
+        <div><div class="review-key">Vendor</div><div class="review-val" id="rev-vendor">—</div></div>
+        <div><div class="review-key">Description</div><div class="review-val" id="rev-desc">—</div></div>
+      </div>
+    </div>
+
+    <div class="review-block">
+      <div class="review-block-title">Budget Amounts</div>
+      <div class="review-grid">
+        <div><div class="review-key">Budget FY 25-26 (A)</div><div class="review-val mono" id="rev-a">—</div></div>
+        <div><div class="review-key">Projected Consumption (B)</div><div class="review-val mono" id="rev-b">—</div></div>
+        <div><div class="review-key">A − B</div><div class="review-val mono" id="rev-ab">—</div></div>
+        <div><div class="review-key">Budget FY 26-27 (C)</div><div class="review-val mono" id="rev-c">—</div></div>
+      </div>
+    </div>
+
+    <div class="step-nav mt-16">
+      <button type="button" class="btn btn-ghost" onclick="goStep(4)">← Back</button>
+      <div class="flex gap-8">
+        <button type="submit" name="action" value="draft" class="btn btn-outline">
+          💾 Save as Draft
+        </button>
+        <button type="submit" name="action" value="submit" class="btn btn-primary"
+          onclick="return confirm('Submit this entry for Admin approval? You cannot edit after submission.')">
+          🚀 Submit for Approval
+        </button>
+      </div>
+    </div>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Init calculations if editing
+document.addEventListener('DOMContentLoaded', () => {
+  calcDiffs();
+  togglePrevKey();
+  autoFillCostCode();
+});
+</script>
+{% endblock %}
