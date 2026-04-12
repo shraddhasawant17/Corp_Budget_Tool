@@ -21,7 +21,7 @@ router = APIRouter()
 async def get_user_from_cookie(request: Request, db: Session):
     from app.auth import decode_token
     from jose import JWTError
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("rbl_token")
     if not token:
         return None
     try:

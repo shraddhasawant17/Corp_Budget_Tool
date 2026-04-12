@@ -67,7 +67,7 @@ class UserResponse(UserBase):
     class Config:
         # orm_mode = True batata hai Pydantic ko ki yeh SQLAlchemy object hai
         # Matlab User(...) object directly pass kar sakte hain — dict banana nahi padega
-        orm_mode = True
+        from_attributes = True
 
 class UserLogin(BaseModel):
     # Sirf login ke liye — email + password
@@ -76,7 +76,7 @@ class UserLogin(BaseModel):
 
 class TokenResponse(BaseModel):
     # Login successful hone ke baad yeh return hoga
-    access_token : str
+    rbl_token : str
     # JWT token — browser isko store karega aur har request ke saath bhejega
     token_type   : str = "bearer"
     # "bearer" = standard HTTP auth type
@@ -148,7 +148,7 @@ class BudgetLineResponse(BudgetLineBase):
     updated_at            : Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class BudgetLineSummary(BaseModel):
     # Dashboard cards ke liye — sirf summary, full detail nahi
@@ -166,7 +166,7 @@ class BudgetLineSummary(BaseModel):
     submitted_by          : int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # ═══════════════════════════════════════════════════════════
 # APPROVAL SCHEMAS
@@ -195,7 +195,7 @@ class ApprovalResponse(BaseModel):
     action_at      : datetime
 
     class Config:
-        orm_mode = True
+       from_attributes = True
 
 # ═══════════════════════════════════════════════════════════
 # DASHBOARD SCHEMAS
@@ -238,7 +238,7 @@ class Dummy1Response(Dummy1Base):
     is_active  : bool
     created_at : datetime
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Dummy2Base(BaseModel):
     event_type   : Optional[str] = None
@@ -252,4 +252,4 @@ class Dummy2Response(Dummy2Base):
     id         : int
     created_at : datetime
     class Config:
-        orm_mode = True
+        from_attributes = True

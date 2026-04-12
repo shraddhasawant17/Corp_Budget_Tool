@@ -22,14 +22,17 @@ uvicorn main:app --reload
 ```
 
 ## Demo Login Credentials
-| Role       | Email                    | Password   |
-|------------|--------------------------|------------|
-| IT Head    | rajesh@rblbank.com       | Pass@1234  |
-| IT Head 2  | priya@rblbank.com        | Pass@1234  |
-| Admin (CA) | kavita@rblbank.com       | Pass@1234  |
-| CEO        | vishwavir@rblbank.com    | Pass@1234  |
+
+| Role       | Email                | Password  |
+| ---------- | -------------------- | --------- |
+| IT Head    | AmitGoel@rblbank.com | Pass@1234 |
+| IT Head 2  | DeepaS@rblbank.com   | Pass@1234 |
+| Admin (CA) | Madhav@rblbank.com   | Pass@1234 |
+| CEO        | Raj@rblbank.com      | Pass@1234 |
+| VP2        | Niki@rblbank.com     | Pass@1234 |
 
 ## What's Built
+
 - Login with JWT cookie auth (3 roles)
 - Budget entry form (5-step wizard with live calculations)
 - Budget lines table (role-filtered)
@@ -40,6 +43,7 @@ uvicorn main:app --reload
 - Swagger docs at /docs
 
 ## Folder Structure
+
 ```
 rbl-budget-portal/
 ├── main.py              ← FastAPI app entry point

@@ -56,7 +56,7 @@ ALGORITHM = "HS256"
 # HS256 = HMAC with SHA-256 — standard JWT algorithm
 # Symmetric algorithm — sign aur verify dono ke liye same key
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 480
+rbl_token_EXPIRE_MINUTES = 480
 # Token kitni der valid rahega — 8 ghante (ek working day)
 # Expire hone ke baad user ko dobara login karna hoga
 
@@ -104,7 +104,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # JWT TOKEN FUNCTIONS
 # ═══════════════════════════════════════════════════════════
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_rbl_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
     JWT token banao
     
@@ -123,7 +123,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(minutes=rbl_token_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
     # "exp" = expiration — JWT standard claim

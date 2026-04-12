@@ -12,7 +12,7 @@ templates = Jinja2Templates(directory="app/templates")
 async def get_user_from_cookie(request: Request, db: Session):
     from app.auth import decode_token
     from jose import JWTError
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("rbl_token")
     if not token:
         return None
     try:
@@ -39,7 +39,8 @@ async def approval_page(request: Request, db: Session = Depends(get_db)):
         pending = db.query(models.BudgetLine).filter(
             models.BudgetLine.submitted_by == user.id
         ).order_by(models.BudgetLine.created_at.desc()).all()
-    return templates.TemplateResponse(request, "approval/index.html", {
+    return templates.TemplateResponse("approval/index.html", {
+        "request": request,
         "user": user, "pending": pending, "active_page": "approval"
     })
 
@@ -80,7 +81,7 @@ async def reject_entry(
 ):
     user = await get_user_from_cookie(request, db)
     if not user:
-        return RedirectResponse(url="/auth/login")
+        return RedirectResponse(url="/auth/login", status_code=302)
     entry = db.query(models.BudgetLine).filter(models.BudgetLine.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Not found")

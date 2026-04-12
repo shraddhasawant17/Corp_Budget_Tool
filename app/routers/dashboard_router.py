@@ -11,7 +11,7 @@ templates = Jinja2Templates(directory="app/templates")
 async def get_user_from_cookie(request: Request, db: Session):
     from app.auth import decode_token
     from jose import JWTError
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("rbl_token")
     if not token:
         return None
     try:
@@ -56,7 +56,8 @@ async def dashboard_page(request: Request, db: Session = Depends(get_db)):
         "it_heads"    : it_heads,
     }
 
-    return templates.TemplateResponse(request, "dashboard/index.html", {
+    return templates.TemplateResponse("dashboard/index.html", {
+        "request" : request,
         "user"        : user,
         "kpi"         : kpi,
         "it_head_data": it_head_data,

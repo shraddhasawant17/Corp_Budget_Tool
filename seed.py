@@ -2,7 +2,7 @@
 # seed.py — Demo Data Script
 # ═══════════════════════════════════════════════════════════
 # Run: python seed.py
-# Yeh 3 demo users aur 6 budget entries banayega
+# Yeh 5 demo users aur 6 budget entries banayega
 # Prototype demonstrate karne ke liye
 # ═══════════════════════════════════════════════════════════
 
@@ -34,28 +34,38 @@ def seed():
     # ── USERS ──────────────────────────────────────────────
     users = [
         models.User(
-            full_name  = "Rajesh Kumar",
-            email      = "rajesh@rblbank.com",
+            full_name  = "Amit Goel",
+            email      = "AmitGoel@rblbank.com",
             password   = hash_password("Pass@1234"),
             role       = models.UserRole.IT_HEAD,
             department = "Retail Banking",
-            spoc_email = "rajesh.spoc@rblbank.com",
+            spoc_email = "Madhav.spoc@rblbank.com",
             cost_code  = "RBL-RB-CC-001",
             is_active  = True,
         ),
         models.User(
-            full_name  = "Priya Mehta",
-            email      = "priya@rblbank.com",
+            full_name  = "Niki Kushe",
+            email      = "Niki@rblbank.com",
+            password   = hash_password("Pass@1234"),
+            role       = models.UserRole.IT_HEAD,
+            department = "Retail Banking",
+            spoc_email = "Abhijit.spoc@rblbank.com",
+            cost_code  = "RBL-RB-CC-001",
+            is_active  = True,
+        ),
+        models.User(
+            full_name  = "Deepa S",
+            email      = "DeepaS@rblbank.com",
             password   = hash_password("Pass@1234"),
             role       = models.UserRole.IT_HEAD,
             department = "Corporate Banking",
-            spoc_email = "priya.spoc@rblbank.com",
+            spoc_email = "Riya.spoc@rblbank.com",
             cost_code  = "RBL-CB-CC-002",
             is_active  = True,
         ),
         models.User(
-            full_name  = "Kavita Nair",
-            email      = "kavita@rblbank.com",
+            full_name  = "Madhav",
+            email      = "Madhav@rblbank.com",
             password   = hash_password("Pass@1234"),
             role       = models.UserRole.ADMIN,
             department = "Finance",
@@ -64,8 +74,8 @@ def seed():
             is_active  = True,
         ),
         models.User(
-            full_name  = "Vishwavir Ahuja",
-            email      = "vishwavir@rblbank.com",
+            full_name  = "Raj Shah",
+            email      = "Raj@rblbank.com",
             password   = hash_password("Pass@1234"),
             role       = models.UserRole.SUPER_ADMIN,
             department = "Executive",
@@ -77,13 +87,16 @@ def seed():
     for u in users:
         db.add(u)
     db.commit()
-    print("  ✓ Created 4 users (2 IT Heads, 1 Admin, 1 CEO)")
+    print("  ✓ Created 5 users (3 IT Heads, 1 Admin, 1 CEO)")
 
     # Refresh to get IDs
     for u in users:
         db.refresh(u)
-    rajesh_id = users[0].id
-    priya_id  = users[1].id
+    Amit_id   = users[0].id
+    Niki_id   = users[1].id
+    Deepa_id  = users[2].id
+    Madhav_id = users[3].id
+    Raj_id    = users[4].id
 
     # ── BUDGET LINES ───────────────────────────────────────
     lines_data = [
@@ -93,7 +106,7 @@ def seed():
             old_new              = models.OldNew.OLD,
             business_name        = "Retail Banking",
             cost_code            = "RBL-RB-CC-001",
-            submitted_by         = rajesh_id,
+            submitted_by         = Amit_id,
             expense_sub_type     = models.ExpenseSubType.OPEX,
             description          = "Oracle DB License Annual Renewal",
             expense_description  = "Annual renewal of Oracle 19c database licenses covering production and DR environments for Retail Banking core systems.",
@@ -115,7 +128,7 @@ def seed():
             old_new              = models.OldNew.NEW,
             business_name        = "Retail Banking",
             cost_code            = "RBL-RB-CC-001",
-            submitted_by         = rajesh_id,
+            submitted_by         = Amit_id,
             expense_sub_type     = models.ExpenseSubType.OPEX,
             description          = "AWS Cloud Infrastructure — Retail Apps",
             expense_description  = "Monthly AWS charges for hosting Retail Banking microservices, API gateways, and analytics workloads.",
@@ -137,7 +150,7 @@ def seed():
             old_new              = models.OldNew.OLD,
             business_name        = "Retail Banking",
             cost_code            = "RBL-RB-CC-001",
-            submitted_by         = rajesh_id,
+            submitted_by         = Amit_id,
             expense_sub_type     = models.ExpenseSubType.CAPEX,
             description          = "Core Banking System Upgrade — Finacle 11",
             expense_description  = "One-time upgrade from Finacle 10.x to Finacle 11. Includes implementation, data migration, and UAT support.",
@@ -159,7 +172,7 @@ def seed():
             old_new              = models.OldNew.NEW,
             business_name        = "Corporate Banking",
             cost_code            = "RBL-CB-CC-002",
-            submitted_by         = priya_id,
+            submitted_by         = Deepa_id,
             expense_sub_type     = models.ExpenseSubType.OPEX,
             description          = "Security Monitoring — Splunk SIEM",
             expense_description  = "Annual Splunk SIEM license for Corporate Banking threat monitoring, log management, and compliance reporting.",
@@ -181,7 +194,7 @@ def seed():
             old_new              = models.OldNew.OLD,
             business_name        = "Corporate Banking",
             cost_code            = "RBL-CB-CC-002",
-            submitted_by         = priya_id,
+            submitted_by         = Deepa_id,
             expense_sub_type     = models.ExpenseSubType.OPEX,
             description          = "Microsoft 365 Enterprise Licenses",
             expense_description  = "Annual M365 E3 licenses for Corporate Banking staff. Includes Teams, SharePoint, Exchange, and Office suite.",
@@ -203,7 +216,7 @@ def seed():
             old_new              = models.OldNew.NEW,
             business_name        = "Corporate Banking",
             cost_code            = "RBL-CB-CC-002",
-            submitted_by         = priya_id,
+            submitted_by         = Deepa_id,
             expense_sub_type     = models.ExpenseSubType.CAPEX,
             description          = "Network Infrastructure Refresh — Core Switches",
             expense_description  = "Replacement of 5-year old core network switches across Corporate Banking data center. Cisco Catalyst 9K series.",
@@ -227,24 +240,21 @@ def seed():
     db.commit()
     print(f"  ✓ Created {len(lines_data)} budget lines")
 
-    # ── APPROVAL RECORDS (for approved entries) ─────────────
-    # Get the IDs of committed lines
+    # ── APPROVAL RECORDS ─────────────
     committed_lines = db.query(models.BudgetLine).all()
-    kavita_id      = users[2].id
-    vishwavir_id   = users[3].id
 
     for line in committed_lines:
         if line.status in [models.BudgetStatus.ADMIN_APPROVED, models.BudgetStatus.FINAL_APPROVED]:
             db.add(models.Approval(
                 budget_line_id = line.id,
-                action_by      = kavita_id,
+                action_by      = Madhav_id,
                 action         = models.ApprovalAction.APPROVED,
                 comment        = "Verified — amounts look reasonable. Forwarding to CEO.",
             ))
         if line.status == models.BudgetStatus.FINAL_APPROVED:
             db.add(models.Approval(
                 budget_line_id = line.id,
-                action_by      = vishwavir_id,
+                action_by      = Raj_id,
                 action         = models.ApprovalAction.APPROVED,
                 comment        = "Approved. Proceed.",
             ))
@@ -255,30 +265,31 @@ def seed():
     db.add(models.Dummy1(
         title       = "OPEX Standard Template",
         description = "Pre-filled template for recurring OPEX entries",
-        ref_user_id = rajesh_id,
+        ref_user_id = Amit_id,
         meta_json   = '{"default_sub_type":"opex","default_resource_count":1}',
     ))
     db.add(models.Dummy1(
         title       = "CAPEX Hardware Template",
         description = "Template for hardware procurement entries",
-        ref_user_id = priya_id,
+        ref_user_id = Deepa_id,
         meta_json   = '{"default_sub_type":"capex","checklist":["RFQ done","Vendor quote","L1 approval"]}',
     ))
     db.commit()
     print("  ✓ Created Dummy1 records (templates placeholder)")
 
     # ── DUMMY2 (Audit log placeholder) ─────────────────────
-    db.add(models.Dummy2(event_type="user_login",    event_data='{"email":"rajesh@rblbank.com"}', triggered_by=rajesh_id))
-    db.add(models.Dummy2(event_type="budget_submit", event_data='{"budget_key":"RBL/IT/26/001"}', triggered_by=rajesh_id))
-    db.add(models.Dummy2(event_type="approved",      event_data='{"budget_key":"RBL/IT/26/001","by":"kavita"}', triggered_by=kavita_id))
+    db.add(models.Dummy2(event_type="user_login",    event_data='{"email":"AmitGoel@rblbank.com"}', triggered_by=Amit_id))
+    db.add(models.Dummy2(event_type="budget_submit", event_data='{"budget_key":"RBL/IT/26/001"}', triggered_by=Amit_id))
+    db.add(models.Dummy2(event_type="approved",      event_data='{"budget_key":"RBL/IT/26/001","by":"Deepa"}', triggered_by=Deepa_id))
     db.commit()
     print("  ✓ Created Dummy2 records (audit log placeholder)")
 
     print("\n✅ Seed complete! Login credentials:")
-    print("   IT Head   → rajesh@rblbank.com     / Pass@1234")
-    print("   IT Head 2 → priya@rblbank.com      / Pass@1234")
-    print("   Admin CA  → kavita@rblbank.com     / Pass@1234")
-    print("   CEO       → vishwavir@rblbank.com  / Pass@1234")
+    print("   IT Head   → AmitGoel@rblbank.com     / Pass@1234")
+    print("   IT Head 2 → Niki@rblbank.com         / Pass@1234")
+    print("   IT Head 3 → DeepaS@rblbank.com       / Pass@1234")
+    print("   Admin CA  → Madhav@rblbank.com       / Pass@1234")
+    print("   CEO       → Raj@rblbank.com          / Pass@1234")
     print("\n   Run server: uvicorn main:app --reload")
     print("   Open:       http://localhost:8000")
 

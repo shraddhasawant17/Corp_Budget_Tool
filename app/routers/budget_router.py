@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="app/templates")
 async def get_user_from_cookie(request: Request, db: Session):
     from app.auth import decode_token
     from jose import JWTError
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("rbl_token")
     if not token:
         return None
     try:
@@ -39,7 +39,8 @@ async def budget_list_page(request: Request, db: Session = Depends(get_db)):
         "submitted": sum(1 for l in lines if l.status == models.BudgetStatus.SUBMITTED),
         "approved" : sum(1 for l in lines if l.status == models.BudgetStatus.FINAL_APPROVED),
     }
-    return templates.TemplateResponse(request, "budget/list.html", {
+    return templates.TemplateResponse("budget/list.html", {
+        "request": request,
         "user": user, "lines": lines, "counts": counts, "active_page": "budget"
     })
 
@@ -51,7 +52,8 @@ async def new_budget_form(request: Request, db: Session = Depends(get_db)):
     if user.role != models.UserRole.IT_HEAD:
         return RedirectResponse(url="/dashboard/")
     next_key = generate_budget_key(db)
-    return templates.TemplateResponse(request, "budget/form.html", {
+    return templates.TemplateResponse("budget/form.html", {
+        "request": request,
         "user": user, "next_key": next_key, "entry": None,
         "error": None, "active_page": "new_entry"
     })
