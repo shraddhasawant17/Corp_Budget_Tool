@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Import Summary — RBL IT Budget Portal{% endblock %}
+{% block page_title %}Import Summary{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h2>Validation Summary</h2>
+    <p>{{ summary.file_name }} — Review before confirming import</p>
+  </div>
+  <a href="/import/" class="btn btn-ghost">← Upload Different File</a>
+</div>
+
+<!-- SUMMARY COUNTS -->
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:24px;">
+  <div class="kpi-card" style="--kpi-color:var(--text-muted);">
+    <div class="kpi-label">Total Rows</div>
+    <div class="kpi-value">{{ summary.total }}</div>
+    <div class="kpi-sub">Found in Excel</div>
+  </div>
+  <div class="kpi-card" style="--kpi-color:var(--success);">
+    <div class="kpi-label">Valid — Ready</div>
+    <div class="kpi-value" style="color:var(--success);">{{ summary.valid_count }}</div>
+    <div class="kpi-sub">Will be imported</div>
+  </div>
+  <div class="kpi-card" style="--kpi-color:var(--rbl-red);">
+    <div class="kpi-label">Invalid — Errors</div>
+    <div class="kpi-value" style="color:var(--rbl-light-red);">{{ summary.invalid_count }}</div>
+    <div class="kpi-sub">Will be skipped</div>
+  </div>
+</div>
+
+{% if summary.invalid_count > 0 %}
+<div class="flash flash-error" style="margin:0 0 20px 0;">
+  ⚠️ {{ summary.invalid_count }} rows have errors — they will be skipped.
+  Fix the Excel and re-upload to import them.
+</div>
+{% endif %}
+
+<!-- ROWS TABLE -->
+<div class="card mb-24">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+    <div class="card-title" style="margin:0;">All Rows Preview</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-outline btn-sm" onclick="filterRows('all')">All ({{ summary.total }})</button>
+      <button class="btn btn-outline btn-sm" onclick="filterRows('valid')" style="color:var(--success);border-color:var(--success);">
+        Valid ({{ summary.valid_count }})
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="filterRows('invalid')" style="color:var(--rbl-light-red);border-color:var(--rbl-light-red);">
+        Errors ({{ summary.invalid_count }})
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="summaryTable">
+      <thead>
+        <tr>
+          <th>Row</th>
+          <th>Status</th>
+          <th>Budget Key</th>
+          <th>Business Name</th>
+          <th>IT Head</th>
+          <th>Expense Type</th>
+          <th>Budget A (₹)</th>
+          <th>Budget C (₹)</th>
+          <th>Errors / Warnings</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in summary.rows %}
+        <tr class="{% if row.valid %}row-valid{% else %}row-invalid{% endif %}"
+            style="{% if not row.valid %}background:rgba(200,16,46,0.05);{% endif %}">
+          <td style="font-size:11px; color:var(--text-muted);">{{ row.row_num }}</td>
+          <td>
+            {% if row.valid %}
+              <span class="badge badge-approved">✓ Valid</span>
+            {% else %}
+              <span class="badge badge-rejected">✗ Error</span>
+            {% endif %}
+          </td>
+          <td class="mono" style="font-size:11px;">{{ row.budget_key or '—' }}</td>
+          <td style="font-size:12px;">{{ row.business or '—' }}</td>
+          <td style="font-size:12px;">{{ row.it_head or '—' }}</td>
+          <td style="font-size:12px;">{{ row.expense_type or '—' }}</td>
+          <td class="mono" style="font-size:11px;">
+            {% if row.budget_a %}₹{{ "{:,.0f}".format(row.budget_a) }}{% else %}—{% endif %}
+          </td>
+          <td class="mono" style="font-size:11px;">
+            {% if row.budget_c %}₹{{ "{:,.0f}".format(row.budget_c) }}{% else %}—{% endif %}
+          </td>
+          <td style="font-size:11px; max-width:300px;">
+            {% if row.errors %}
+              {% for err in row.errors %}
+                <div style="color:var(--rbl-light-red);">✗ {{ err }}</div>
+              {% endfor %}
+            {% endif %}
+            {% if row.warnings %}
+              {% for w in row.warnings %}
+                <div style="color:var(--warning);">⚠ {{ w }}</div>
+              {% endfor %}
+            {% endif %}
+            {% if not row.errors and not row.warnings %}
+              <span style="color:var(--success);">All good</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CONFIRM SECTION -->
+{% if summary.valid_count > 0 %}
+<div class="card" style="border-color:rgba(0,200,150,0.2);">
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <div style="font-size:15px; font-weight:700; margin-bottom:4px;">
+        Ready to import {{ summary.valid_count }} valid rows
+      </div>
+      <div style="font-size:13px; color:var(--text-muted);">
+        They will be saved as DRAFT — you can review and submit for approval afterwards.
+        {% if summary.invalid_count > 0 %}
+        {{ summary.invalid_count }} invalid rows will be skipped.
+        {% endif %}
+      </div>
+    </div>
+    <form method="POST" action="/import/confirm">
+      <input type="hidden" name="file_id" value="{{ file_id }}"/>
+      <button type="submit" class="btn btn-primary btn-lg"
+              onclick="return confirm('Import {{ summary.valid_count }} rows as DRAFT entries?')">
+        ✅ Confirm Import ({{ summary.valid_count }} rows)
+      </button>
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="card" style="border-color:rgba(200,16,46,0.2);">
+  <div class="empty-state">
+    <div class="empty-icon">❌</div>
+    <div class="empty-title">No valid rows to import</div>
+    <div class="empty-sub">Fix all errors in Excel and upload again.</div>
+    <a href="/import/" class="btn btn-primary btn-sm" style="margin-top:14px;">Upload Again</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterRows(type) {
+  const rows = document.querySelectorAll('#summaryTable tbody tr');
+  rows.forEach(row => {
+    if (type === 'all') {
+      row.style.display = '';
+    } else if (type === 'valid') {
+      row.style.display = row.classList.contains('row-valid') ? '' : 'none';
+    } else {
+      row.style.display = row.classList.contains('row-invalid') ? '' : 'none';
+    }
+  });
+}
+</script>
+{% endblock %}
